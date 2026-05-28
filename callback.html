@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RACKED — Connecting WHOOP…</title>
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0a0b;--text:#f4f4f5;--dim:#8a8a93;--volt:#c9f73a;--hot:#ff5a3c;--line:#2a2a2e}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Archivo,system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center}
+  .card{max-width:480px;width:calc(100% - 48px);padding:32px;border:1px solid var(--line);border-radius:18px;background:#141416;text-align:center}
+  h1{font-family:Oswald,sans-serif;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:24px;margin:0 0 8px}
+  p{color:var(--dim);font-size:14px;line-height:1.5;margin:0 0 16px}
+  .ok{color:var(--volt)}
+  .err{color:var(--hot)}
+  pre{background:#0a0a0b;border:1px solid var(--line);border-radius:8px;padding:12px;font:11px JetBrains Mono,monospace;color:var(--dim);text-align:left;white-space:pre-wrap;word-break:break-word;max-height:200px;overflow:auto}
+  a.btn{display:inline-block;margin-top:16px;padding:12px 24px;background:var(--volt);color:#0a0a0b;font-weight:700;text-transform:uppercase;letter-spacing:.08em;text-decoration:none;border-radius:999px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1 id="title">Connecting WHOOP…</h1>
+  <p id="msg">Exchanging authorization code for an access token.</p>
+  <pre id="detail" style="display:none"></pre>
+  <a id="back" class="btn" href="./" style="display:none">Open RACKED</a>
+</div>
+<script>
+const REDIRECT_URI = `${location.origin}/callback`;
+const title = document.getElementById('title');
+const msg = document.getElementById('msg');
+const detail = document.getElementById('detail');
+const back = document.getElementById('back');
+
+function fail(headline, body){
+  title.textContent = headline;
+  title.classList.add('err');
+  msg.textContent = 'Something went wrong. You can try again from the app.';
+  if (body){ detail.style.display='block'; detail.textContent = typeof body==='string'?body:JSON.stringify(body,null,2); }
+  back.style.display='inline-block';
+}
+
+(async function(){
+  const params = new URLSearchParams(location.search);
+  const code = params.get('code');
+  const state = params.get('state');
+  const err = params.get('error');
+  const errDesc = params.get('error_description');
+
+  if (err){ return fail('Authorization denied', errDesc || err); }
+  if (!code){ return fail('No code returned', 'WHOOP did not include ?code= in the redirect.'); }
+
+  const savedState = localStorage.getItem('whoop_state');
+  if (!savedState || savedState !== state){
+    return fail('State mismatch', 'Possible CSRF or an old auth attempt. Try connecting again.');
+  }
+  localStorage.removeItem('whoop_state');
+
+  try {
+    const r = await fetch('/api/whoop-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'exchange', code, redirect_uri: REDIRECT_URI }),
+    });
+    const data = await r.json();
+    if (!r.ok || !data.access_token){
+      return fail('Token exchange failed', data);
+    }
+    const expiresAt = Date.now() + (Number(data.expires_in||3600) * 1000);
+    localStorage.setItem('whoop_access_token', data.access_token);
+    localStorage.setItem('whoop_refresh_token', data.refresh_token || '');
+    localStorage.setItem('whoop_expires_at', String(expiresAt));
+    title.textContent = 'WHOOP connected';
+    title.classList.add('ok');
+    msg.textContent = 'Returning to RACKED…';
+    setTimeout(() => { location.replace('./'); }, 800);
+  } catch (e){
+    fail('Network error', String(e));
+  }
+})();
+</script>
+</body>
+</html>

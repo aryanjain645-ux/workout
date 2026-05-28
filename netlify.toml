@@ -1,5 +1,16 @@
 [build]
   publish = "."
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/callback"
+  to = "/callback.html"
+  status = 200
+
+[[redirects]]
+  from = "/api/whoop-auth"
+  to = "/.netlify/functions/whoop-auth"
+  status = 200
 
 [[headers]]
   for = "/*"
