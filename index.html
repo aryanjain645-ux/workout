@@ -319,7 +319,10 @@ $('#connectBtn').addEventListener('click',async()=>{
   if(!url||!key){toast('Fill in both fields',true);return;}
   const b=$('#connectBtn');b.disabled=true;b.textContent='Testing…';
   try{const r=await fetch(`${url}/rest/v1/sets?limit=1`,{headers:{apikey:key,Authorization:'Bearer '+key}});
-    if(!r.ok){const t=await r.text();throw new Error(t.includes('does not exist')?'Table "sets" not found — run the SQL snippet first.':'Connection failed — check URL & key.');}
+    if(!r.ok){const t=await r.text();
+      const missing=/does not exist|could not find the table|PGRST205/i.test(t);
+      const badAuth=r.status===401||/invalid|jwt|api key/i.test(t);
+      throw new Error(missing?'Table "sets" not found — run schema.sql in Supabase SQL Editor first.':badAuth?'Auth failed — check the API key (use the publishable or anon key, not service_role).':`Connection failed (${r.status}): ${t.slice(0,180)}`);}
     URL_=url;KEY=key;DEMO=false;await Store.set('sb_url',url);await Store.set('sb_key',key);toast('Connected');showApp();
   }catch(e){toast(e.message||'Failed',true);}finally{b.disabled=false;b.textContent='Connect';}
 });
