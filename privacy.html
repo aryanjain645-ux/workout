@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RACKED — Privacy Policy</title>
+<meta name="theme-color" content="#0a0a0b">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0a0b;--panel:#141416;--line:#2a2a2e;--text:#f4f4f5;--dim:#8a8a93;--volt:#c9f73a}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Archivo,system-ui,sans-serif;line-height:1.55}
+  .wrap{max-width:680px;margin:0 auto;padding:48px 24px 96px}
+  h1{font-family:Oswald,sans-serif;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:36px;margin:0 0 4px}
+  .accent{color:var(--volt)}
+  .meta{color:var(--dim);font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:32px}
+  h2{font-family:Oswald,sans-serif;font-weight:500;letter-spacing:.04em;text-transform:uppercase;font-size:18px;margin:32px 0 8px;color:var(--volt)}
+  p,li{color:#d4d4d8;font-size:15px}
+  ul{padding-left:20px}
+  a{color:var(--volt);text-decoration:none;border-bottom:1px solid rgba(201,247,58,.35)}
+  a:hover{border-bottom-color:var(--volt)}
+  .back{display:inline-block;margin-top:48px;padding:10px 18px;border:1px solid var(--line);border-radius:999px;color:var(--dim);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+  .back:hover{color:var(--text);border-color:var(--text)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Privacy Policy<span class="accent">.</span></h1>
+  <div class="meta">RACKED · Last updated 2026-05-28</div>
+
+  <p>RACKED is a personal weightlifting log built and operated by a single user. This policy explains what data the app handles and where it lives.</p>
+
+  <h2>What we collect</h2>
+  <ul>
+    <li><strong>Workout data you enter:</strong> exercises, weights, reps, sets, dates.</li>
+    <li><strong>Bodyweight entries</strong> you choose to log.</li>
+    <li><strong>WHOOP data (if you connect WHOOP):</strong> recovery score, heart-rate variability, resting heart rate, sleep duration and timing, daily cycles, and your basic profile, accessed via WHOOP's API under the scopes you grant.</li>
+  </ul>
+
+  <h2>Where it's stored</h2>
+  <p>All workout and bodyweight data is stored in <strong>your own Supabase project</strong>, controlled by your credentials. RACKED is a static web app — there is no RACKED-operated backend that stores your data.</p>
+  <p>WHOOP data is fetched at view time and cached only in your device's local storage and service-worker cache to support offline use. It is not transmitted to any third party.</p>
+
+  <h2>Who can see your data</h2>
+  <p>Only you, plus anyone you explicitly share your Supabase URL and API key with. We do not sell, share, or have access to your data.</p>
+
+  <h2>Third parties we rely on</h2>
+  <ul>
+    <li><strong>Supabase</strong> — hosts your database. See <a href="https://supabase.com/privacy">supabase.com/privacy</a>.</li>
+    <li><strong>Netlify</strong> — hosts the static app. See <a href="https://www.netlify.com/privacy/">netlify.com/privacy</a>.</li>
+    <li><strong>WHOOP</strong> — source of recovery/sleep data, only if you connect it. See <a href="https://www.whoop.com/privacy/">whoop.com/privacy</a>.</li>
+    <li><strong>Google Fonts</strong> — serves the typefaces used in the UI.</li>
+  </ul>
+
+  <h2>Revoking access</h2>
+  <p>You can disconnect WHOOP at any time from <a href="https://www.whoop.com/oauth/apps">your WHOOP app permissions page</a>. You can wipe all RACKED data by clearing the relevant rows in your Supabase tables or clearing site data in your browser.</p>
+
+  <h2>Contact</h2>
+  <p>Questions: <a href="mailto:aryanjain645@gmail.com">aryanjain645@gmail.com</a></p>
+
+  <a class="back" href="./">← Back to app</a>
+</div>
+</body>
+</html>
