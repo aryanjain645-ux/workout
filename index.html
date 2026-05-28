@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>RACKED</title>
+<meta name="theme-color" content="#0a0a0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RACKED">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0b; --panel:#141416; --panel2:#1b1b1f; --line:#2a2a2e;
+    --text:#f4f4f5; --dim:#8a8a93; --faint:#5a5a61;
+    --volt:#c9f73a; --volt-dim:#9bc22a; --hot:#ff5a3c; --gold:#ffd23c;
+    --sheet-pad: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Archivo',sans-serif; overscroll-behavior:none;}
+  body{padding-top:env(safe-area-inset-top,0px);}
+  h1,h2,h3,.disp{font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:.04em; margin:0;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  button{font-family:'Oswald',sans-serif; cursor:pointer; border:none; background:none; color:inherit;}
+  input,select{font-family:'JetBrains Mono',monospace;}
+  .hidden{display:none !important;}
+
+  /* SETUP */
+  #setup{min-height:100dvh; display:flex; flex-direction:column; justify-content:center; padding:32px 24px; max-width:460px; margin:0 auto;}
+  .brand{display:flex; align-items:baseline; gap:10px; margin-bottom:6px;}
+  .brand .bar{font-family:'Oswald'; font-weight:700; font-size:44px; letter-spacing:.06em;}
+  .brand .dot{width:12px; height:12px; background:var(--volt); border-radius:2px; transform:translateY(-4px); box-shadow:0 0 18px var(--volt);}
+  .tag{color:var(--dim); font-size:13px; letter-spacing:.18em; text-transform:uppercase; margin-bottom:34px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block; font-family:'Oswald'; text-transform:uppercase; font-size:12px; letter-spacing:.14em; color:var(--dim); margin-bottom:7px;}
+  .field input{width:100%; background:var(--panel); border:1px solid var(--line); border-radius:12px; color:var(--text); padding:15px 14px; font-size:14px; outline:none;}
+  .field input:focus{border-color:var(--volt-dim);}
+  .btn-main{width:100%; background:var(--volt); color:#0a0a0b; font-weight:700; font-size:18px; letter-spacing:.08em; text-transform:uppercase; padding:16px; border-radius:12px; margin-top:10px;}
+  .btn-main:active{transform:scale(.98);}
+  .btn-ghost{width:100%; background:none; border:1px solid var(--line); color:var(--text); font-weight:600; font-size:15px; letter-spacing:.06em; text-transform:uppercase; padding:14px; border-radius:12px; margin-top:12px;}
+  .or{text-align:center; color:var(--faint); font-size:11px; letter-spacing:.2em; text-transform:uppercase; margin:18px 0 4px;}
+  .help{font-size:12.5px; color:var(--faint); line-height:1.7; margin-top:22px;}
+  .help a{color:var(--volt-dim);} .help b{color:var(--dim);}
+  .help code{background:var(--panel2); padding:2px 6px; border-radius:5px; font-family:'JetBrains Mono'; font-size:11.5px; color:var(--volt);}
+
+  /* APP shell */
+  #app{max-width:560px; margin:0 auto; padding:0 16px calc(150px + var(--sheet-pad)) 16px;}
+  header{display:flex; align-items:center; justify-content:space-between; padding:18px 2px 12px;}
+  header .ttl{display:flex; align-items:baseline; gap:8px;}
+  header .ttl .bar{font-family:'Oswald'; font-weight:700; font-size:24px; letter-spacing:.06em;}
+  header .ttl .dot{width:8px; height:8px; background:var(--volt); border-radius:2px; transform:translateY(-3px); box-shadow:0 0 10px var(--volt);}
+  header .date{font-family:'JetBrains Mono'; font-size:12px; color:var(--dim);}
+  .gear{width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; background:var(--panel); color:var(--dim); font-size:18px;}
+  .demo-bar{font-family:'JetBrains Mono'; font-size:10.5px; letter-spacing:.06em; color:var(--faint); text-transform:uppercase; padding:0 2px 12px;}
+  .demo-bar b{color:var(--volt-dim);}
+
+  .nav{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:18px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:5px;}
+  .nav button{padding:11px; border-radius:9px; font-weight:600; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim);}
+  .nav button.active{background:var(--volt); color:#0a0a0b;}
+
+  /* LOG */
+  .tabs{display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; margin-bottom:18px;}
+  .tab{background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:13px 4px; text-align:center; font-weight:600; font-size:13px; letter-spacing:.04em; color:var(--dim); transition:.12s;}
+  .tab .sub{display:block; font-family:'JetBrains Mono'; font-size:9px; letter-spacing:.1em; color:var(--faint); margin-top:3px; text-transform:none;}
+  .tab.active{background:var(--volt); color:#0a0a0b; border-color:var(--volt);}
+  .tab.active .sub{color:#0a0a0b; opacity:.6;}
+  .ex{background:var(--panel); border:1px solid var(--line); border-radius:14px; margin-bottom:10px; overflow:hidden;}
+  .ex-head{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:15px 16px;}
+  .ex-name{font-family:'Oswald'; font-weight:500; text-transform:uppercase; font-size:16px; letter-spacing:.03em;}
+  .ex-last{font-family:'JetBrains Mono'; font-size:12px; color:var(--volt-dim); margin-top:4px; line-height:1.4;}
+  .ex-last .lbl{color:var(--faint);} .ex-last.empty{color:var(--faint);}
+  .chev{color:var(--faint); font-size:13px; transition:.2s; flex-shrink:0;}
+  .ex.open .chev{transform:rotate(180deg); color:var(--volt);}
+  .logger{border-top:1px solid var(--line); padding:16px; display:none;}
+  .ex.open .logger{display:block;}
+  .steppers{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;}
+  .stp label{display:block; font-family:'Oswald'; text-transform:uppercase; font-size:11px; letter-spacing:.12em; color:var(--dim); margin-bottom:7px; text-align:center;}
+  .stp-row{display:flex; align-items:center; background:var(--panel2); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+  .stp-row button{width:46px; height:54px; font-size:24px; font-weight:500; color:var(--volt); flex-shrink:0;}
+  .stp-row button:active{background:#000;}
+  .stp-row input{flex:1; min-width:0; text-align:center; background:none; border:none; color:var(--text); font-size:22px; font-weight:700; outline:none; padding:0;}
+  .add{width:100%; background:var(--volt); color:#0a0a0b; font-weight:700; font-size:16px; letter-spacing:.08em; text-transform:uppercase; padding:14px; border-radius:12px;}
+  .add:active{transform:scale(.99);} .add:disabled{opacity:.45;}
+  .today{margin-top:14px;}
+  .today-lbl{font-family:'Oswald'; text-transform:uppercase; font-size:11px; letter-spacing:.12em; color:var(--dim); margin-bottom:9px;}
+  .chips{display:flex; flex-wrap:wrap; gap:7px;}
+  .chip{display:flex; align-items:center; gap:8px; background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:7px 10px; font-family:'JetBrains Mono'; font-size:13px;}
+  .chip b{color:var(--volt);} .chip .x{color:var(--faint); font-size:14px; padding:0 2px;} .chip .x:active{color:var(--hot);}
+  .ref{font-family:'JetBrains Mono'; font-size:11.5px; color:var(--faint); margin-top:12px;} .ref b{color:var(--volt-dim);}
+  .add-ex{width:100%; border:1px dashed var(--line); border-radius:12px; padding:13px; color:var(--dim); font-family:'Oswald'; text-transform:uppercase; letter-spacing:.06em; font-size:13px; margin-top:4px; background:none;}
+
+  /* STATS */
+  .sec{margin-bottom:26px;}
+  .sec-h{font-family:'Oswald'; text-transform:uppercase; font-size:13px; letter-spacing:.14em; color:var(--dim); margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  .sec-h::before{content:''; width:14px; height:2px; background:var(--volt);}
+  .cards{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:13px; padding:14px;}
+  .card .k{font-family:'Oswald'; text-transform:uppercase; font-size:10px; letter-spacing:.1em; color:var(--faint); margin-bottom:6px;}
+  .card .v{font-family:'JetBrains Mono'; font-weight:700; font-size:26px; line-height:1; color:var(--text);}
+  .card .v small{font-size:13px; color:var(--dim); font-weight:400;}
+  .card .v.volt{color:var(--volt);}
+  .panel-box{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px;}
+  .picker{width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:11px 12px; font-size:14px; margin-bottom:14px; outline:none; -webkit-appearance:none; appearance:none;}
+  .chart-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+  .chart-head .lbl{font-family:'Oswald'; text-transform:uppercase; font-size:11px; letter-spacing:.1em; color:var(--dim);}
+  .chart-head .now{font-family:'JetBrains Mono'; font-weight:700; font-size:18px; color:var(--volt);}
+  .chart-head .now small{color:var(--dim); font-weight:400; font-size:11px;}
+  svg.lc{width:100%; height:auto; display:block;}
+  .lc-meta{display:flex; justify-content:space-between; font-family:'JetBrains Mono'; font-size:10px; color:var(--faint); margin-top:2px;}
+  .delta{font-family:'JetBrains Mono'; font-size:11px; margin-top:8px;}
+  .delta.up{color:var(--volt);} .delta.down{color:var(--hot);}
+  .empty-c,.solo{font-family:'JetBrains Mono'; color:var(--faint); font-size:13px; padding:24px 0; text-align:center;}
+  .solo{font-size:30px; color:var(--volt);} .solo span{font-size:13px; color:var(--dim);}
+
+  /* heatmap */
+  .hm{display:flex; gap:3px; justify-content:flex-start; overflow-x:auto; padding-bottom:2px;}
+  .hm-col{display:flex; flex-direction:column; gap:3px;}
+  .hm-cell{width:14px; height:14px; border-radius:3px; background:#1f1f23;}
+  .hm-cell.empty{background:transparent;}
+  .hm-legend{display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono'; font-size:10px; color:var(--faint); margin-top:10px;}
+  .hm-legend i{width:11px; height:11px; border-radius:2px; display:inline-block;}
+
+  /* muscle bars */
+  .mbar{margin-bottom:13px;}
+  .mbar-top{display:flex; justify-content:space-between; font-family:'JetBrains Mono'; font-size:12px; margin-bottom:5px;}
+  .mbar-top span:first-child{font-family:'Archivo'; color:var(--text);}
+  .mtrack{position:relative; height:10px; background:var(--panel2); border-radius:6px; overflow:hidden;}
+  .mband{position:absolute; top:0; bottom:0; background:rgba(255,255,255,.07); border-left:1px dashed var(--faint); border-right:1px dashed var(--faint);}
+  .mfill{position:absolute; top:0; bottom:0; left:0; border-radius:6px;}
+  .balance{display:flex; gap:10px; margin-top:4px;}
+  .balance .bcard{flex:1; background:var(--panel2); border-radius:10px; padding:12px; text-align:center;}
+  .balance .bcard .bk{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); font-family:'Oswald';}
+  .balance .bcard .bv{font-family:'JetBrains Mono'; font-weight:700; font-size:20px; color:var(--volt); margin-top:4px;}
+  .reprange{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:4px;}
+  .rr{background:var(--panel2); border-radius:10px; padding:11px; text-align:center;}
+  .rr .rrv{font-family:'JetBrains Mono'; font-weight:700; font-size:18px;} .rr .rrk{font-size:9.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--faint); font-family:'Oswald'; margin-top:3px;}
+
+  /* overdue */
+  .od{display:flex; justify-content:space-between; align-items:center; padding:11px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .od:last-child{border-bottom:none;}
+  .od .d{font-family:'JetBrains Mono'; font-size:13px;}
+  .od .d.warn{color:var(--gold);} .od .d.ok{color:var(--volt-dim);}
+
+  /* PR wall */
+  .pr{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line);}
+  .pr:last-child{border-bottom:none;}
+  .pr .pn{font-family:'Oswald'; text-transform:uppercase; font-size:14px; letter-spacing:.02em;}
+  .pr .ps{font-family:'JetBrains Mono'; font-size:11px; color:var(--faint); margin-top:2px;}
+  .pr .pv{font-family:'JetBrains Mono'; font-weight:700; font-size:17px; color:var(--volt); text-align:right;}
+  .pr .pv small{display:block; font-size:10px; color:var(--dim); font-weight:400;}
+
+  .flag{display:flex; gap:9px; align-items:flex-start; background:rgba(255,210,60,.07); border:1px solid rgba(255,210,60,.25); border-radius:11px; padding:11px 13px; margin-bottom:8px; font-size:13px; line-height:1.4;}
+  .flag .ic{color:var(--gold); font-size:15px;}
+  .flag b{color:var(--gold);}
+  .good{font-family:'JetBrains Mono'; color:var(--volt-dim); font-size:12.5px;}
+
+  .bw-row{display:flex; gap:9px; margin-top:12px;}
+  .bw-row input{flex:1; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:10px; padding:11px; text-align:center; font-size:15px; font-weight:700; outline:none;}
+  .bw-row button{background:var(--volt); color:#0a0a0b; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:0 18px; border-radius:10px; font-size:13px;}
+
+  /* REST */
+  #rest{position:fixed; left:0; right:0; bottom:0; z-index:40; background:rgba(14,14,16,.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-top:1px solid var(--line); padding:12px 16px calc(12px + var(--sheet-pad)) 16px;}
+  #rest .inner{max-width:560px; margin:0 auto;}
+  .rest-idle{display:flex; align-items:center; gap:10px;}
+  .rest-idle .rl{font-family:'Oswald'; text-transform:uppercase; letter-spacing:.14em; font-size:13px; color:var(--dim); margin-right:auto;}
+  .rest-idle button{background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 16px; font-family:'JetBrains Mono'; font-weight:700; font-size:15px; color:var(--text);}
+  .rest-idle button:active{background:var(--volt); color:#000; border-color:var(--volt);}
+  .rest-run{display:flex; align-items:center; gap:14px;}
+  .rest-run .count{font-family:'JetBrains Mono'; font-weight:700; font-size:40px; letter-spacing:.02em; color:var(--volt); line-height:1; flex:1; transition:color .2s;}
+  .rest-run.done .count{color:var(--hot); animation:pulse .5s ease-in-out infinite;}
+  @keyframes pulse{50%{opacity:.35;}}
+  .rest-run .stop{background:var(--hot); color:#0a0a0b; font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:13px 22px; border-radius:11px; font-size:15px;}
+  .tip{font-size:10.5px; color:var(--faint); line-height:1.5; margin-top:9px; text-align:center;} .tip b{color:var(--volt-dim);}
+
+  #toast{position:fixed; left:50%; top:max(20px,env(safe-area-inset-top)); transform:translateX(-50%); z-index:90; background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:11px 16px; font-size:13px; max-width:90vw; box-shadow:0 12px 40px rgba(0,0,0,.6); opacity:0; transition:.25s; pointer-events:none;}
+  #toast.show{opacity:1;} #toast.err{border-color:var(--hot); color:#ffd9d0;}
+  .loading{text-align:center; color:var(--faint); padding:40px 0; font-family:'JetBrains Mono'; font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<section id="setup" class="hidden">
+  <div class="brand"><span class="bar">RACKED</span><span class="dot"></span></div>
+  <div class="tag">Lift log · cloud synced</div>
+  <div class="field"><label>Supabase Project URL</label>
+    <input id="cfgUrl" type="url" inputmode="url" autocapitalize="off" autocorrect="off" placeholder="https://xxxx.supabase.co"></div>
+  <div class="field"><label>Supabase anon key</label>
+    <input id="cfgKey" type="text" autocapitalize="off" autocorrect="off" placeholder="eyJhbGci..."></div>
+  <button id="connectBtn" class="btn-main">Connect</button>
+  <div class="or">— or —</div>
+  <button id="demoBtn" class="btn-ghost">▸ Try with sample data</button>
+  <div class="help">
+    One-time setup (≈3 min, free): make a project at <a href="https://supabase.com" target="_blank">supabase.com</a>, run the table snippet in <b>SQL Editor</b>, then paste your <code>URL</code> + <code>anon</code> key from Project Settings → API. Your data lives in that table — open it on your laptop anytime.
+  </div>
+</section>
+
+<!-- APP -->
+<section id="app" class="hidden">
+  <header>
+    <div class="ttl"><span class="bar">RACKED</span><span class="dot"></span></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="date" id="todayLabel"></span>
+      <button class="gear" id="gearBtn">⚙</button>
+    </div>
+  </header>
+  <div class="demo-bar hidden" id="demoBar">▸ <b>Demo mode</b> — sample data, nothing saves. Reload to reset.</div>
+  <div class="nav">
+    <button id="navLog" class="active">Log</button>
+    <button id="navStats">Stats</button>
+  </div>
+  <div id="viewLog">
+    <div class="tabs" id="tabs"></div>
+    <div id="exerciseList"></div>
+  </div>
+  <div id="viewStats" class="hidden"></div>
+</section>
+
+<!-- REST -->
+<section id="rest" class="hidden">
+  <div class="inner">
+    <div class="rest-idle" id="restIdle">
+      <span class="rl">Rest</span>
+      <button data-sec="120">2:00</button><button data-sec="150">2:30</button><button data-sec="180">3:00</button>
+    </div>
+    <div class="rest-run hidden" id="restRun">
+      <span class="count" id="restCount">3:00</span><button class="stop" id="restStop">Stop</button>
+    </div>
+    <div class="tip">Hands-off? Clock → Timer → <b>When Timer Ends → Stop Playing</b>. Shows in the Dynamic Island and kills your music at zero.</div>
+  </div>
+</section>
+
+<div id="toast"></div>
+
+<script>
+/* ===== storage shim (artifact-safe; localStorage on real deploy) ===== */
+const Store={
+  async get(k){try{if(window.storage){const r=await window.storage.get(k);return r?r.value:null;}return localStorage.getItem(k);}catch(e){return null;}},
+  async set(k,v){try{if(window.storage){await window.storage.set(k,v);return;}localStorage.setItem(k,v);}catch(e){}},
+  async del(k){try{if(window.storage){await window.storage.delete(k);return;}localStorage.removeItem(k);}catch(e){}}
+};
+
+/* ===== program + muscle map ===== */
+const PROGRAM={
+  'Chest / Triceps':['Barbell Flat Bench','Incline DB Press','Seated Chest Flies','Tricep Pushdown','Overhead Tricep Extension'],
+  'Back / Biceps':['Pull-ups','Lat Pulldown','Rows','Incline DB Curl','Machine Curl','Hammer Curls'],
+  'Legs / Shoulders':['DB Shoulder Press','Barbell Squats','Lateral Cable Raises','Leg Extension','Rear Cable Pulls','Calf Raises','RDL (optional)']
+};
+const TAB_SUB={'Chest / Triceps':'CHEST·TRI','Back / Biceps':'BACK·BI','Legs / Shoulders':'LEGS·SHO'};
+const MUSCLE={
+  'Barbell Flat Bench':'Chest','Incline DB Press':'Chest','Seated Chest Flies':'Chest',
+  'Tricep Pushdown':'Triceps','Overhead Tricep Extension':'Triceps',
+  'Pull-ups':'Back','Lat Pulldown':'Back','Rows':'Back',
+  'Incline DB Curl':'Biceps','Machine Curl':'Biceps','Hammer Curls':'Biceps',
+  'DB Shoulder Press':'Shoulders','Lateral Cable Raises':'Shoulders','Rear Cable Pulls':'Shoulders',
+  'Barbell Squats':'Quads','Leg Extension':'Quads','Calf Raises':'Calves','RDL (optional)':'Hamstrings'
+};
+const PUSH=new Set(['Chest','Shoulders','Triceps','Quads','Calves']);
+const PULL=new Set(['Back','Biceps','Hamstrings']);
+
+/* ===== state ===== */
+let DEMO=false, URL_=null, KEY=null;
+let DB=[], _id=1, BW=[];
+let currentDay=Object.keys(PROGRAM)[0], rows=[], openEx=null, lastWeight={};
+let statEx=null;
+
+/* ===== helpers ===== */
+const $=s=>document.querySelector(s);
+function localDate(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function prettyDate(iso){const[y,m,dd]=iso.split('-');return new Date(y,m-1,dd).toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+function dayNum(iso){const[y,m,d]=iso.split('-').map(Number);return Math.floor(Date.UTC(y,m-1,d)/86400000);}
+function weekIdx(iso){return Math.floor(dayNum(iso)/7);}
+function daysSince(iso){return dayNum(localDate())-dayNum(iso);}
+function e1rm(r){return r.weight>0? r.weight*(1+r.reps/30): r.reps;}
+function vol(r){return r.weight>0? r.weight*r.reps : r.reps*5;}
+function fmtNum(n){return Math.abs(n%1)<0.05? String(Math.round(n)) : n.toFixed(1);}
+let toastTimer; function toast(m,err){const t=$('#toast');t.textContent=m;t.className=(err?'err ':'')+'show';clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className=t.className.replace('show',''),err?3500:1600);}
+
+/* ===== supabase ===== */
+function hdrs(x={}){return Object.assign({apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},x);}
+async function sbGet(day){const u=`${URL_}/rest/v1/sets?day=eq.${encodeURIComponent(day)}&order=log_date.desc,set_number.asc&limit=4000`;const r=await fetch(u,{headers:hdrs()});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbAll(){const r=await fetch(`${URL_}/rest/v1/sets?order=log_date.asc&limit=10000`,{headers:hdrs()});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbInsert(row){const r=await fetch(`${URL_}/rest/v1/sets`,{method:'POST',headers:hdrs({Prefer:'return=representation'}),body:JSON.stringify(row)});if(!r.ok)throw new Error(await r.text());return (await r.json())[0];}
+async function sbDelete(id){const r=await fetch(`${URL_}/rest/v1/sets?id=eq.${id}`,{method:'DELETE',headers:hdrs()});if(!r.ok)throw new Error(await r.text());}
+async function sbBW(){try{const r=await fetch(`${URL_}/rest/v1/bodyweight?order=log_date.asc&limit=3000`,{headers:hdrs()});if(!r.ok)return[];return r.json();}catch(e){return[];}}
+async function sbBWadd(row){const r=await fetch(`${URL_}/rest/v1/bodyweight`,{method:'POST',headers:hdrs({Prefer:'return=representation'}),body:JSON.stringify(row)});if(!r.ok)throw new Error(await r.text());return (await r.json())[0];}
+
+/* ===== data api (demo vs real) ===== */
+const api={
+  async getDay(d){return DEMO? DB.filter(r=>r.day===d): sbGet(d);},
+  async getAll(){return DEMO? DB.slice(): sbAll();},
+  async insert(row){if(DEMO){const r={...row,id:_id++};DB.unshift(r);return r;}return sbInsert(row);},
+  async del(id){if(DEMO){DB=DB.filter(x=>x.id!==id);return;}return sbDelete(id);},
+  async getBW(){return DEMO? BW.slice(): sbBW();},
+  async addBW(row){if(DEMO){BW.push(row);return row;}return sbBWadd(row);}
+};
+
+/* ===== boot ===== */
+(async function(){URL_=await Store.get('sb_url');KEY=await Store.get('sb_key');
+  if(URL_&&KEY){URL_=URL_.replace(/\/+$/,'');DEMO=false;showApp();}else showSetup();})();
+function showSetup(){$('#setup').classList.remove('hidden');$('#app').classList.add('hidden');$('#rest').classList.add('hidden');}
+async function showApp(){
+  $('#setup').classList.add('hidden');$('#app').classList.remove('hidden');$('#rest').classList.remove('hidden');
+  $('#demoBar').classList.toggle('hidden',!DEMO);
+  $('#todayLabel').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  renderTabs();await loadDay();
+}
+
+/* ===== setup actions ===== */
+$('#connectBtn').addEventListener('click',async()=>{
+  const url=$('#cfgUrl').value.trim().replace(/\/+$/,''),key=$('#cfgKey').value.trim();
+  if(!url||!key){toast('Fill in both fields',true);return;}
+  const b=$('#connectBtn');b.disabled=true;b.textContent='Testing…';
+  try{const r=await fetch(`${url}/rest/v1/sets?limit=1`,{headers:{apikey:key,Authorization:'Bearer '+key}});
+    if(!r.ok){const t=await r.text();throw new Error(t.includes('does not exist')?'Table "sets" not found — run the SQL snippet first.':'Connection failed — check URL & key.');}
+    URL_=url;KEY=key;DEMO=false;await Store.set('sb_url',url);await Store.set('sb_key',key);toast('Connected');showApp();
+  }catch(e){toast(e.message||'Failed',true);}finally{b.disabled=false;b.textContent='Connect';}
+});
+$('#demoBtn').addEventListener('click',()=>{DEMO=true;buildDemo();showApp();});
+$('#gearBtn').addEventListener('click',async()=>{
+  if(DEMO){toast('Demo mode — connect a database to save');return;}
+  if(confirm('Reconnect to a different database?')){await Store.del('sb_url');await Store.del('sb_key');URL_=KEY=null;showSetup();}
+});
+
+/* ===== view nav ===== */
+$('#navLog').onclick=()=>switchView('log');
+$('#navStats').onclick=()=>switchView('stats');
+function switchView(v){
+  $('#navLog').classList.toggle('active',v==='log');
+  $('#navStats').classList.toggle('active',v==='stats');
+  $('#viewLog').classList.toggle('hidden',v!=='log');
+  $('#viewStats').classList.toggle('hidden',v!=='stats');
+  if(v==='stats')loadStats();
+}
+
+/* ===== LOG ===== */
+function renderTabs(){const w=$('#tabs');w.innerHTML='';Object.keys(PROGRAM).forEach(day=>{
+  const b=document.createElement('button');b.className='tab'+(day===currentDay?' active':'');
+  b.innerHTML=`${day.split(' / ')[0]}<span class="sub">${TAB_SUB[day]}</span>`;
+  b.onclick=()=>{if(currentDay===day)return;currentDay=day;openEx=null;renderTabs();loadDay();};w.appendChild(b);});}
+async function loadDay(){const list=$('#exerciseList');list.innerHTML='<div class="loading">loading…</div>';
+  try{rows=await api.getDay(currentDay);}catch(e){list.innerHTML='<div class="loading">Couldn\'t load.</div>';toast('Load failed: '+e.message,true);return;}renderList();}
+function exForDay(){const s=PROGRAM[currentDay].slice(),seen=new Set(s.map(x=>x.toLowerCase()));
+  rows.forEach(r=>{if(r.exercise&&!seen.has(r.exercise.toLowerCase())){s.push(r.exercise);seen.add(r.exercise.toLowerCase());}});return s;}
+function summarize(ex){const today=localDate(),mine=rows.filter(r=>r.exercise===ex),byD={};
+  mine.forEach(r=>{(byD[r.log_date]=byD[r.log_date]||[]).push(r);});const dates=Object.keys(byD).sort().reverse();
+  const todays=(byD[today]||[]).slice().sort((a,b)=>a.set_number-b.set_number);
+  const lastDate=dates.find(d=>d!==today);const last=lastDate?byD[lastDate].slice().sort((a,b)=>a.set_number-b.set_number):[];
+  return{todays,last,lastDate};}
+function fmtSets(sets){const g=[];sets.forEach(s=>{const t=g[g.length-1];if(t&&t.w===s.weight)t.reps.push(s.reps);else g.push({w:s.weight,reps:[s.reps]});});
+  return g.map(x=>`${x.w}×${x.reps.join(', ')}`).join('   ');}
+function renderList(){const list=$('#exerciseList');list.innerHTML='';
+  exForDay().forEach(ex=>{const{todays,last,lastDate}=summarize(ex);const card=document.createElement('div');card.className='ex'+(openEx===ex?' open':'');
+    const head=document.createElement('div');head.className='ex-head';
+    const lh=last.length?`<div class="ex-last"><span class="lbl">LAST ${prettyDate(lastDate)} ·</span> ${fmtSets(last)}</div>`:`<div class="ex-last empty">no history yet</div>`;
+    head.innerHTML=`<div><div class="ex-name">${ex}</div>${lh}</div><div class="chev">▼</div>`;
+    head.onclick=()=>{openEx=(openEx===ex?null:ex);renderList();};card.appendChild(head);
+    const lg=document.createElement('div');lg.className='logger';if(openEx===ex)lg.appendChild(buildLogger(ex,todays,last,lastDate));card.appendChild(lg);list.appendChild(card);});
+  const ab=document.createElement('button');ab.className='add-ex';ab.textContent='+ Add exercise';
+  ab.onclick=()=>{const n=prompt('Exercise name');if(n&&n.trim()){openEx=n.trim();renderList();}};list.appendChild(ab);}
+function buildLogger(ex,todays,last,lastDate){const wrap=document.createElement('div');
+  const sW=lastWeight[ex]??(todays.length?todays[todays.length-1].weight:(last.length?last[0].weight:45));
+  const sR=last.length?last[0].reps:10;
+  wrap.innerHTML=`<div class="steppers">
+    <div class="stp"><label>Weight (lb)</label><div class="stp-row"><button data-act="w-">–</button><input id="w_${cid(ex)}" inputmode="numeric" value="${sW}"><button data-act="w+">+</button></div></div>
+    <div class="stp"><label>Reps</label><div class="stp-row"><button data-act="r-">–</button><input id="r_${cid(ex)}" inputmode="numeric" value="${sR}"><button data-act="r+">+</button></div></div></div>
+    <button class="add" id="add_${cid(ex)}">Add set ${todays.length+1}</button>`;
+  const wIn=wrap.querySelector(`#w_${cid(ex)}`),rIn=wrap.querySelector(`#r_${cid(ex)}`);
+  wrap.querySelectorAll('button[data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act;
+    if(a==='w+')wIn.value=num(wIn.value)+5;if(a==='w-')wIn.value=Math.max(0,num(wIn.value)-5);
+    if(a==='r+')rIn.value=num(rIn.value)+1;if(a==='r-')rIn.value=Math.max(0,num(rIn.value)-1);});
+  wrap.querySelector(`#add_${cid(ex)}`).onclick=async e=>{const btn=e.target,w=num(wIn.value),r=num(rIn.value);
+    if(r<=0){toast('Reps must be > 0',true);return;}lastWeight[ex]=w;btn.disabled=true;btn.textContent='Saving…';
+    try{const saved=await api.insert({log_date:localDate(),day:currentDay,exercise:ex,weight:w,reps:r,set_number:todays.length+1});
+      rows.unshift(saved);toast('Set logged');if(navigator.vibrate)navigator.vibrate(15);renderList();}
+    catch(err){toast('Save failed: '+err.message,true);btn.disabled=false;btn.textContent='Add set '+(todays.length+1);}};
+  if(todays.length){const t=document.createElement('div');t.className='today';t.innerHTML=`<div class="today-lbl">Today</div>`;
+    const ch=document.createElement('div');ch.className='chips';
+    todays.forEach(s=>{const c=document.createElement('div');c.className='chip';c.innerHTML=`<span><b>${s.weight}</b>×${s.reps}</span><span class="x">✕</span>`;
+      c.querySelector('.x').onclick=async()=>{if(!confirm('Delete this set?'))return;try{await api.del(s.id);rows=rows.filter(x=>x.id!==s.id);renderList();toast('Deleted');}catch(e){toast('Delete failed',true);}};ch.appendChild(c);});
+    t.appendChild(ch);wrap.appendChild(t);}
+  if(last.length){const ref=document.createElement('div');ref.className='ref';ref.innerHTML=`Last session (${prettyDate(lastDate)}): <b>${fmtSets(last)}</b> — beat it.`;wrap.appendChild(ref);}
+  return wrap;}
+function cid(s){return s.replace(/[^a-z0-9]/gi,'_');}
+function num(v){const n=parseFloat(v);return isNaN(n)?0:n;}
+
+/* ===== STATS ===== */
+async function loadStats(){const v=$('#viewStats');v.innerHTML='<div class="loading">crunching numbers…</div>';
+  let all,bw;try{all=await api.getAll();bw=await api.getBW();}catch(e){v.innerHTML='<div class="loading">Couldn\'t load stats.</div>';toast('Stats failed: '+e.message,true);return;}
+  renderStats(all,bw);}
+
+function lineChart(data,color,unit){
+  if(!data.length)return '<div class="empty-c">no data yet</div>';
+  if(data.length===1)return `<div class="solo">${fmtNum(data[0].v)} <span>${unit||''}</span></div>`;
+  const W=320,H=130,pl=6,pr=6,pt=12,pb=14;const vs=data.map(d=>d.v);let mn=Math.min(...vs),mx=Math.max(...vs);if(mn===mx){mn-=1;mx+=1;}
+  const xx=i=>pl+(i/(data.length-1))*(W-pl-pr),yy=v=>pt+(1-(v-mn)/(mx-mn))*(H-pt-pb);
+  const pts=data.map((d,i)=>`${xx(i).toFixed(1)},${yy(d.v).toFixed(1)}`).join(' ');
+  const area=`${pl},${H-pb} ${pts} ${W-pr},${H-pb}`;const lastv=data[data.length-1].v;
+  return `<svg viewBox="0 0 ${W} ${H}" class="lc"><polygon points="${area}" fill="${color}" opacity="0.08"/>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${xx(data.length-1).toFixed(1)}" cy="${yy(lastv).toFixed(1)}" r="3.5" fill="${color}"/></svg>
+    <div class="lc-meta"><span>${prettyDate(data[0].t)}</span><span>${prettyDate(data[data.length-1].t)}</span></div>`;}
+
+function sessionsByDate(rows){const m={};rows.forEach(r=>{(m[r.log_date]=m[r.log_date]||[]).push(r);});return m;}
+
+function renderStats(all,bw){
+  const v=$('#viewStats');
+  if(!all.length){v.innerHTML='<div class="loading">Log a few sessions and your stats will appear here.</div>';return;}
+  const byDate=sessionsByDate(all);
+  const dates=Object.keys(byDate).sort();
+  const thisWk=weekIdx(localDate());
+
+  /* this week */
+  const wkRows=all.filter(r=>weekIdx(r.log_date)===thisWk);
+  const wkDates=new Set(wkRows.map(r=>r.log_date));
+  const wkVol=wkRows.reduce((a,r)=>a+vol(r),0);
+  /* PRs this week: exercises whose all-time best e1rm date is in this week */
+  const bestByEx={};all.forEach(r=>{const k=r.exercise;const e=e1rm(r);if(!bestByEx[k]||e>bestByEx[k].e)bestByEx[k]={e,date:r.log_date,weight:r.weight,reps:r.reps};});
+  const prThisWk=Object.values(bestByEx).filter(b=>weekIdx(b.date)===thisWk).length;
+
+  /* consistency */
+  const wkSet=new Set(all.map(r=>weekIdx(r.log_date)));
+  let cur=0,wk=thisWk;while(wkSet.has(wk)){cur++;wk--;}
+  const allWk=[...wkSet].sort((a,b)=>a-b);let longest=0,run=0,prev=null;
+  allWk.forEach(w=>{if(prev!==null&&w===prev+1)run++;else run=1;longest=Math.max(longest,run);prev=w;});
+  const recentWks=8;const recentDates=dates.filter(d=>weekIdx(d)>thisWk-recentWks);
+  const avgPerWk=(new Set(recentDates).size/recentWks).toFixed(1);
+
+  /* overdue */
+  const overdue=Object.keys(PROGRAM).map(day=>{const ds=all.filter(r=>r.day===day).map(r=>r.log_date).sort();
+    const last=ds[ds.length-1];return{day,since:last?daysSince(last):null};});
+
+  /* strength picker */
+  const exCounts={};all.forEach(r=>{const m={};});
+  const exSessions={};all.forEach(r=>{(exSessions[r.exercise]=exSessions[r.exercise]||new Set()).add(r.log_date);});
+  const exList=Object.keys(exSessions).filter(e=>exSessions[e].size>=2).sort();
+  if(!statEx||!exList.includes(statEx))statEx=exList.includes('Barbell Squats')?'Barbell Squats':(exList[0]||null);
+
+  /* muscle sets per week (avg over last 4 wks) */
+  const span=4;const recentSetRows=all.filter(r=>weekIdx(r.log_date)>thisWk-span);
+  const mset={};recentSetRows.forEach(r=>{const mu=MUSCLE[r.exercise];if(!mu)return;mset[mu]=(mset[mu]||0)+1;});
+  const muscleOrder=['Chest','Back','Shoulders','Biceps','Triceps','Quads','Hamstrings','Calves'];
+  const muscleItems=muscleOrder.filter(m=>mset[m]!==undefined||true).map(m=>({label:m,value:Math.round((mset[m]||0)/span)}));
+
+  /* push/pull (last 4 wks set counts) */
+  let push=0,pull=0;recentSetRows.forEach(r=>{const mu=MUSCLE[r.exercise];if(PUSH.has(mu))push++;else if(PULL.has(mu))pull++;});
+  const ppRatio=pull>0?(push/pull).toFixed(2):'—';
+
+  /* rep range distribution (all) */
+  let str=0,hyp=0,end=0;all.forEach(r=>{if(r.reps<=5)str++;else if(r.reps<=12)hyp++;else end++;});
+  const tot=str+hyp+end||1;
+
+  /* PR wall */
+  const mainLifts=['Barbell Squats','Barbell Flat Bench','DB Shoulder Press','Lat Pulldown','Rows'].filter(e=>bestByEx[e]);
+  const heaviest={};all.forEach(r=>{if(!heaviest[r.exercise]||r.weight>heaviest[r.exercise])heaviest[r.exercise]=r.weight;});
+
+  /* plateau flags */
+  const flags=[];Object.keys(exSessions).forEach(ex=>{
+    const ds=[...exSessions[ex]].sort();if(ds.length<4)return;
+    const bestPerDay=ds.map(d=>Math.max(...all.filter(r=>r.exercise===ex&&r.log_date===d).map(e1rm)));
+    const lastN=3;const recent=bestPerDay.slice(-lastN);const prior=bestPerDay.slice(0,-lastN);
+    if(!prior.length)return;const peakPrior=Math.max(...prior);const recentMax=Math.max(...recent);
+    if(recentMax<=peakPrior+0.01){flags.push({ex,sessions:lastN});}
+  });
+
+  /* bodyweight */
+  const bwSorted=bw.slice().sort((a,b)=>a.log_date<b.log_date?-1:1);
+  const latestBW=bwSorted.length?bwSorted[bwSorted.length-1].weight:null;
+  const relSq=latestBW&&heaviest['Barbell Squats']?(heaviest['Barbell Squats']/latestBW).toFixed(2):null;
+  const relBn=latestBW&&heaviest['Barbell Flat Bench']?(heaviest['Barbell Flat Bench']/latestBW).toFixed(2):null;
+
+  /* ===== build HTML ===== */
+  let h='';
+  /* overview */
+  h+=`<div class="sec"><div class="cards">
+    <div class="card"><div class="k">Sessions this wk</div><div class="v">${wkDates.size}</div></div>
+    <div class="card"><div class="k">Volume this wk</div><div class="v volt">${(wkVol/1000).toFixed(1)}<small>k lb</small></div></div>
+    <div class="card"><div class="k">Week streak</div><div class="v">${cur}<small> / ${longest} best</small></div></div>
+    <div class="card"><div class="k">PRs this wk</div><div class="v ${prThisWk?'volt':''}">${prThisWk}</div></div>
+  </div></div>`;
+
+  /* strength progression */
+  if(statEx){
+    const ds=[...exSessions[statEx]].sort();
+    const e1=ds.map(d=>({t:d,v:Math.max(...all.filter(r=>r.exercise===statEx&&r.log_date===d).map(e1rm))}));
+    const vl=ds.map(d=>({t:d,v:all.filter(r=>r.exercise===statEx&&r.log_date===d).reduce((a,r)=>a+vol(r),0)}));
+    const isBW=all.filter(r=>r.exercise===statEx).every(r=>r.weight===0);
+    const now=e1[e1.length-1].v, first=e1[0].v; const dPct=first>0?((now-first)/first*100):0;
+    h+=`<div class="sec"><div class="sec-h">Strength progression</div>
+      <select class="picker" id="statPicker">${exList.map(e=>`<option ${e===statEx?'selected':''}>${e}</option>`).join('')}</select>
+      <div class="panel-box" style="margin-bottom:10px;">
+        <div class="chart-head"><span class="lbl">${isBW?'Top reps':'Est. 1RM'}</span><span class="now">${fmtNum(now)} <small>${isBW?'reps':'lb'}</small></span></div>
+        ${lineChart(e1,'#c9f73a',isBW?'reps':'lb')}
+        <div class="delta ${dPct>=0?'up':'down'}">${dPct>=0?'▲':'▼'} ${Math.abs(dPct).toFixed(0)}% since ${prettyDate(e1[0].t)}</div>
+      </div>
+      <div class="panel-box">
+        <div class="chart-head"><span class="lbl">Volume / session</span><span class="now">${fmtNum(vl[vl.length-1].v)} <small>lb</small></span></div>
+        ${lineChart(vl,'#9bc22a','lb')}
+      </div></div>`;
+  }
+
+  /* plateau flags */
+  h+=`<div class="sec"><div class="sec-h">Progress check</div>`;
+  if(flags.length){flags.slice(0,4).forEach(f=>{h+=`<div class="flag"><span class="ic">⚠</span><span><b>${f.ex}</b> hasn't set a new high in its last ${f.sessions} sessions — time to push reps, add weight, or deload.</span></div>`;});}
+  else{h+=`<div class="good">✓ Everything's trending up — no stalls detected.</div>`;}
+  h+=`</div>`;
+
+  /* consistency */
+  h+=`<div class="sec"><div class="sec-h">Consistency</div>
+    <div class="panel-box" style="margin-bottom:10px;">
+      <div class="chart-head"><span class="lbl">Last 16 weeks · ${avgPerWk}/wk avg</span></div>
+      ${heatmap(all)}
+      <div class="hm-legend">less <i style="background:#1f1f23"></i><i style="background:rgba(201,247,58,.35)"></i><i style="background:rgba(201,247,58,.7)"></i><i style="background:rgba(201,247,58,1)"></i> more</div>
+    </div>`;
+  h+=`<div class="panel-box">`;overdue.forEach(o=>{const cls=o.since===null?'':(o.since>=7?'warn':'ok');
+    h+=`<div class="od"><span>${o.day}</span><span class="d ${cls}">${o.since===null?'never':(o.since===0?'today':o.since+'d ago')}</span></div>`;});
+  h+=`</div></div>`;
+
+  /* muscle balance */
+  h+=`<div class="sec"><div class="sec-h">Muscle balance</div>
+    <div class="panel-box" style="margin-bottom:10px;">
+      <div class="chart-head"><span class="lbl">Sets / muscle / week</span><span class="lbl" style="color:var(--faint)">band = 10–20 target</span></div>
+      ${muscleBars(muscleItems,[10,20])}
+    </div>
+    <div class="balance">
+      <div class="bcard"><div class="bk">Push : Pull</div><div class="bv">${ppRatio}</div></div>
+      <div class="bcard"><div class="bk">Total sets / wk</div><div class="bv">${Math.round(recentSetRows.length/span)}</div></div>
+    </div>
+    <div class="reprange" style="margin-top:10px;">
+      <div class="rr"><div class="rrv" style="color:#ff5a3c">${Math.round(str/tot*100)}%</div><div class="rrk">Strength 1–5</div></div>
+      <div class="rr"><div class="rrv" style="color:#c9f73a">${Math.round(hyp/tot*100)}%</div><div class="rrk">Hyper 6–12</div></div>
+      <div class="rr"><div class="rrv" style="color:#9bc22a">${Math.round(end/tot*100)}%</div><div class="rrk">Endur 13+</div></div>
+    </div></div>`;
+
+  /* PR wall + body */
+  h+=`<div class="sec"><div class="sec-h">Records</div><div class="panel-box">`;
+  mainLifts.forEach(e=>{const b=bestByEx[e];h+=`<div class="pr"><div><div class="pn">${e}</div><div class="ps">best set ${prettyDate(b.date)} · ${heaviest[e]} lb heaviest</div></div>
+    <div class="pv">${fmtNum(b.e)}<small>est 1RM</small></div></div>`;});
+  h+=`</div></div>`;
+
+  h+=`<div class="sec"><div class="sec-h">Body &amp; relative strength</div><div class="panel-box">
+    <div class="chart-head"><span class="lbl">Bodyweight</span><span class="now">${latestBW?latestBW+' ':'—'}<small>lb</small></span></div>
+    ${lineChart(bwSorted.map(b=>({t:b.log_date,v:b.weight})),'#8a8a93','lb')}
+    <div class="balance" style="margin-top:14px;">
+      <div class="bcard"><div class="bk">Squat × BW</div><div class="bv">${relSq?relSq+'×':'—'}</div></div>
+      <div class="bcard"><div class="bk">Bench × BW</div><div class="bv">${relBn?relBn+'×':'—'}</div></div>
+    </div>
+    <div class="bw-row"><input id="bwInput" inputmode="decimal" placeholder="${latestBW||'log weight'}"><button id="bwSave">Log</button></div>
+  </div></div>`;
+
+  v.innerHTML=h;
+  const pk=$('#statPicker');if(pk)pk.onchange=e=>{statEx=e.target.value;renderStats(all,bw);};
+  const bs=$('#bwSave');if(bs)bs.onclick=async()=>{const w=num($('#bwInput').value);if(w<=0){toast('Enter a weight',true);return;}
+    try{const row={log_date:localDate(),weight:w};const saved=await api.addBW(row);bw.push(saved);toast('Logged');renderStats(all,bw);}catch(e){toast('Save failed — add the bodyweight table',true);}};
+}
+
+function heatmap(all){const volMap={};all.forEach(r=>{volMap[r.log_date]=(volMap[r.log_date]||0)+vol(r);});
+  const max=Math.max(1,...Object.values(volMap));const weeks=16;const today=new Date();
+  let start=new Date(today);start.setDate(today.getDate()-(weeks*7-1));while(start.getDay()!==1)start.setDate(start.getDate()-1);
+  let html='<div class="hm">';for(let w=0;w<weeks+1;w++){html+='<div class="hm-col">';for(let d=0;d<7;d++){
+    const dt=new Date(start);dt.setDate(start.getDate()+w*7+d);if(dt>today){html+='<div class="hm-cell empty"></div>';continue;}
+    const key=localDate(dt),vv=volMap[key]||0,op=vv?(0.25+0.75*(vv/max)):0;
+    html+=`<div class="hm-cell" title="${prettyDate(key)} · ${vv?Math.round(vv)+' vol':'rest'}"${vv?` style="background:rgba(201,247,58,${op.toFixed(2)})"`:''}></div>`;}
+    html+='</div>';}return html+'</div>';}
+
+function muscleBars(items,target){const mx=Math.max(target[1],...items.map(i=>i.value),1);
+  return items.map(i=>{const pct=i.value/mx*100,lo=target[0]/mx*100,hi=target[1]/mx*100;
+    const col=i.value<target[0]?'#ff5a3c':(i.value>target[1]?'#ffd23c':'#c9f73a');
+    return `<div class="mbar"><div class="mbar-top"><span>${i.label}</span><span class="mono">${i.value}</span></div>
+      <div class="mtrack"><div class="mband" style="left:${lo}%;width:${hi-lo}%"></div><div class="mfill" style="width:${pct}%;background:${col}"></div></div></div>`;}).join('');}
+
+/* ===== demo data ===== */
+function buildDemo(){DB=[];_id=1;BW=[];const days=Object.keys(PROGRAM);
+  const base={'Barbell Flat Bench':135,'Incline DB Press':50,'Seated Chest Flies':25,'Tricep Pushdown':50,'Overhead Tricep Extension':40,'Pull-ups':0,'Lat Pulldown':120,'Rows':95,'Incline DB Curl':30,'Machine Curl':60,'Hammer Curls':30,'DB Shoulder Press':40,'Barbell Squats':95,'Lateral Cable Raises':15,'Leg Extension':90,'Rear Cable Pulls':20,'Calf Raises':90,'RDL (optional)':95};
+  const inc={'Barbell Flat Bench':2.5,'Incline DB Press':1.5,'Seated Chest Flies':1,'Tricep Pushdown':1.5,'Overhead Tricep Extension':1,'Pull-ups':0,'Lat Pulldown':2.5,'Rows':2.5,'Incline DB Curl':1,'Machine Curl':2,'Hammer Curls':1,'DB Shoulder Press':0.3,'Barbell Squats':5,'Lateral Cable Raises':0.6,'Leg Extension':3,'Rear Cable Pulls':1,'Calf Raises':3,'RDL (optional)':3};
+  const today=new Date();let cyc=0;
+  for(let dd=98;dd>=0;dd--){const date=new Date(today);date.setDate(today.getDate()-dd);
+    if(![1,3,5].includes(date.getDay()))continue;if(Math.random()<0.1){cyc++;continue;}
+    const day=days[cyc%3];cyc++;const week=(98-dd)/7;
+    PROGRAM[day].forEach(ex=>{if(ex.includes('optional')&&Math.random()<0.5)return;
+      const plateau=ex==='DB Shoulder Press';const wkE=plateau?Math.min(week,5):week;
+      let w=base[ex]+Math.round((inc[ex]*wkE)/2.5)*2.5;if(base[ex]===0)w=0;
+      const rB=ex==='Pull-ups'?6:10;
+      for(let s=1;s<=3;s++){let reps=base[ex]===0?Math.min(12,rB+Math.floor(wkE/3))-(s-1):(rB-(s-1))+(Math.random()<0.3?1:0);
+        reps=Math.max(4,reps);DB.push({id:_id++,log_date:localDate(date),day,exercise:ex,weight:w,reps,set_number:s});}});
+    if(dd%14===0)BW.push({log_date:localDate(date),weight:178-Math.round(week*0.2)});}
+}
+
+/* ===== rest timer ===== */
+let restInt=null,restEnd=0,actx=null;
+document.querySelectorAll('#restIdle button').forEach(b=>b.onclick=()=>startRest(+b.dataset.sec));
+$('#restStop').onclick=()=>stopRest();
+function startRest(sec){stopRest();restEnd=Date.now()+sec*1000;$('#restIdle').classList.add('hidden');$('#restRun').classList.remove('hidden');$('#restRun').classList.remove('done');tickRest();restInt=setInterval(tickRest,250);}
+function tickRest(){const left=Math.round((restEnd-Date.now())/1000);
+  if(left<=0){$('#restCount').textContent='0:00';$('#restRun').classList.add('done');clearInterval(restInt);restInt=null;beep();if(navigator.vibrate)navigator.vibrate([200,100,200,100,300]);return;}
+  $('#restCount').textContent=`${Math.floor(left/60)}:${String(left%60).padStart(2,'0')}`;}
+function stopRest(){if(restInt){clearInterval(restInt);restInt=null;}$('#restRun').classList.add('hidden');$('#restRun').classList.remove('done');$('#restIdle').classList.remove('hidden');}
+function beep(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();[0,0.5,1.0].forEach(t=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;o.type='sine';o.connect(g);g.connect(actx.destination);const s=actx.currentTime+t;g.gain.setValueAtTime(0.001,s);g.gain.exponentialRampToValueAtTime(0.4,s+0.02);g.gain.exponentialRampToValueAtTime(0.001,s+0.35);o.start(s);o.stop(s+0.36);});}catch(e){}}
+
+/* ===== service worker registration + offline toast ===== */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=>console.warn('SW registration failed',err));
+  });
+}
+(function offlineBanner(){
+  const el=document.createElement('div');
+  el.id='netStatus';
+  el.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(110px + env(safe-area-inset-bottom,0px));background:#ff5a3c;color:#0a0a0b;font:600 12px/1 Archivo,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border-radius:999px;z-index:9999;transition:opacity .25s;opacity:0;pointer-events:none;';
+  el.textContent='Offline — changes won’t sync';
+  document.body.appendChild(el);
+  const update=()=>{el.style.opacity=navigator.onLine?'0':'1';};
+  window.addEventListener('online',update);
+  window.addEventListener('offline',update);
+  update();
+})();
+</script>
+</body>
+</html>
