@@ -702,17 +702,18 @@ function muscleBars(items,target){const mx=Math.max(target[1],...items.map(i=>i.
 
 /* ===== demo data ===== */
 function buildDemo(){DB=[];_id=1;BW=[];const days=Object.keys(PROGRAM);
-  const base={'Barbell Flat Bench':135,'Incline DB Press':50,'Seated Chest Flies':25,'Tricep Pushdown':50,'Overhead Tricep Extension':40,'Pull-ups':0,'Lat Pulldown':120,'Rows':95,'Incline DB Curl':30,'Machine Curl':60,'Hammer Curls':30,'DB Shoulder Press':40,'Barbell Squats':95,'Lateral Cable Raises':15,'Leg Extension':90,'Rear Cable Pulls':20,'Calf Raises':90,'RDL (optional)':95};
-  const inc={'Barbell Flat Bench':2.5,'Incline DB Press':1.5,'Seated Chest Flies':1,'Tricep Pushdown':1.5,'Overhead Tricep Extension':1,'Pull-ups':0,'Lat Pulldown':2.5,'Rows':2.5,'Incline DB Curl':1,'Machine Curl':2,'Hammer Curls':1,'DB Shoulder Press':0.3,'Barbell Squats':5,'Lateral Cable Raises':0.6,'Leg Extension':3,'Rear Cable Pulls':1,'Calf Raises':3,'RDL (optional)':3};
+  const base={'Barbell Flat Bench':135,'Incline DB Press':50,'Seated Chest Flies':25,'Tricep Pushdown':50,'Overhead Tricep Extension':40,'Pull-ups':0,'Lat Pulldown':120,'Rows':95,'Incline DB Curl':30,'Machine Curl':60,'Hammer Curls':30,'Barbell Shoulder Press':65,'Barbell Squats':95,'Smith Machine Squat':95,'Lateral Cable Raises':15,'Leg Extension':90,'Rear Cable Pulls':20,'Calf Raises':90,'RDL (optional)':95};
+  const inc={'Barbell Flat Bench':2.5,'Incline DB Press':1.5,'Seated Chest Flies':1,'Tricep Pushdown':1.5,'Overhead Tricep Extension':1,'Pull-ups':0,'Lat Pulldown':2.5,'Rows':2.5,'Incline DB Curl':1,'Machine Curl':2,'Hammer Curls':1,'Barbell Shoulder Press':0.4,'Barbell Squats':5,'Smith Machine Squat':4,'Lateral Cable Raises':0.6,'Leg Extension':3,'Rear Cable Pulls':1,'Calf Raises':3,'RDL (optional)':3};
   const today=new Date();let cyc=0;
   for(let dd=98;dd>=0;dd--){const date=new Date(today);date.setDate(today.getDate()-dd);
     if(![1,3,5].includes(date.getDay()))continue;if(Math.random()<0.1){cyc++;continue;}
     const day=days[cyc%3];cyc++;const week=(98-dd)/7;
     PROGRAM[day].forEach(ex=>{if(ex.includes('optional')&&Math.random()<0.5)return;
-      const plateau=ex==='DB Shoulder Press';const wkE=plateau?Math.min(week,5):week;
-      let w=base[ex]+Math.round((inc[ex]*wkE)/2.5)*2.5;if(base[ex]===0)w=0;
+      const plateau=ex==='Barbell Shoulder Press';const wkE=plateau?Math.min(week,5):week;
+      const b=base[ex]??45,k=inc[ex]??1;
+      let w=b+Math.round((k*wkE)/2.5)*2.5;if(b===0)w=0;
       const rB=ex==='Pull-ups'?6:10;
-      for(let s=1;s<=3;s++){let reps=base[ex]===0?Math.min(12,rB+Math.floor(wkE/3))-(s-1):(rB-(s-1))+(Math.random()<0.3?1:0);
+      for(let s=1;s<=3;s++){let reps=b===0?Math.min(12,rB+Math.floor(wkE/3))-(s-1):(rB-(s-1))+(Math.random()<0.3?1:0);
         reps=Math.max(4,reps);DB.push({id:_id++,log_date:localDate(date),day,exercise:ex,weight:w,reps,set_number:s});}});
     if(dd%14===0)BW.push({log_date:localDate(date),weight:178-Math.round(week*0.2)});}
 }

@@ -1,5 +1,5 @@
 /* RACKED service worker — offline app shell + opportunistic Supabase cache */
-const VERSION = 'racked-v4';
+const VERSION = 'racked-v5';
 const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const SUPABASE_CACHE = `${VERSION}-supabase`;
