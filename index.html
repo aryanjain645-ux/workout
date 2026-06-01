@@ -268,7 +268,7 @@ const Store={
 const PROGRAM={
   'Chest / Triceps':['Barbell Flat Bench','Incline DB Press','Seated Chest Flies','Tricep Pushdown','Overhead Tricep Extension'],
   'Back / Biceps':['Pull-ups','Lat Pulldown','Rows','Incline DB Curl','Machine Curl','Hammer Curls'],
-  'Legs / Shoulders':['DB Shoulder Press','Barbell Squats','Lateral Cable Raises','Leg Extension','Rear Cable Pulls','Calf Raises','RDL (optional)']
+  'Legs / Shoulders':['Barbell Shoulder Press','Barbell Squats','Smith Machine Squat','Lateral Cable Raises','Leg Extension','Rear Cable Pulls','Calf Raises','RDL (optional)']
 };
 const TAB_SUB={'Chest / Triceps':'CHEST·TRI','Back / Biceps':'BACK·BI','Legs / Shoulders':'LEGS·SHO'};
 const MUSCLE={
@@ -276,8 +276,8 @@ const MUSCLE={
   'Tricep Pushdown':'Triceps','Overhead Tricep Extension':'Triceps',
   'Pull-ups':'Back','Lat Pulldown':'Back','Rows':'Back',
   'Incline DB Curl':'Biceps','Machine Curl':'Biceps','Hammer Curls':'Biceps',
-  'DB Shoulder Press':'Shoulders','Lateral Cable Raises':'Shoulders','Rear Cable Pulls':'Shoulders',
-  'Barbell Squats':'Quads','Leg Extension':'Quads','Calf Raises':'Calves','RDL (optional)':'Hamstrings'
+  'Barbell Shoulder Press':'Shoulders','Lateral Cable Raises':'Shoulders','Rear Cable Pulls':'Shoulders',
+  'Barbell Squats':'Quads','Smith Machine Squat':'Quads','Leg Extension':'Quads','Calf Raises':'Calves','RDL (optional)':'Hamstrings'
 };
 const PUSH=new Set(['Chest','Shoulders','Triceps','Quads','Calves']);
 const PULL=new Set(['Back','Biceps','Hamstrings']);
@@ -285,8 +285,11 @@ const PULL=new Set(['Back','Biceps','Hamstrings']);
 /* ===== state ===== */
 let DEMO=false, URL_=null, KEY=null;
 let DB=[], _id=1, BW=[];
-let currentDay=Object.keys(PROGRAM)[0], rows=[], openEx=null, lastWeight={};
+let currentDay=Object.keys(PROGRAM)[0], rows=[], openEx=null, lastWeight={}, lastReps={};
 let statEx=null;
+let customExercises=(()=>{try{return JSON.parse(localStorage.getItem('racked_custom_ex')||'{}');}catch(e){return{};}})();
+function saveCustomExercises(){try{localStorage.setItem('racked_custom_ex',JSON.stringify(customExercises));}catch(e){}}
+function addCustomExercise(day,name){const k=name.trim();if(!k)return;const list=customExercises[day]=customExercises[day]||[];if(!list.some(x=>x.toLowerCase()===k.toLowerCase()))list.push(k);saveCustomExercises();}
 
 /* ===== helpers ===== */
 const $=s=>document.querySelector(s);
@@ -432,6 +435,7 @@ function renderTabs(){const w=$('#tabs');w.innerHTML='';Object.keys(PROGRAM).for
 async function loadDay(){const list=$('#exerciseList');list.innerHTML='<div class="loading">loading…</div>';
   try{rows=await api.getDay(currentDay);}catch(e){list.innerHTML='<div class="loading">Couldn\'t load.</div>';toast('Load failed: '+e.message,true);return;}renderList();}
 function exForDay(){const s=PROGRAM[currentDay].slice(),seen=new Set(s.map(x=>x.toLowerCase()));
+  (customExercises[currentDay]||[]).forEach(n=>{if(!seen.has(n.toLowerCase())){s.push(n);seen.add(n.toLowerCase());}});
   rows.forEach(r=>{if(r.exercise&&!seen.has(r.exercise.toLowerCase())){s.push(r.exercise);seen.add(r.exercise.toLowerCase());}});return s;}
 function summarize(ex){const today=localDate(),mine=rows.filter(r=>r.exercise===ex),byD={};
   mine.forEach(r=>{(byD[r.log_date]=byD[r.log_date]||[]).push(r);});const dates=Object.keys(byD).sort().reverse();
@@ -448,20 +452,20 @@ function renderList(){const list=$('#exerciseList');list.innerHTML='';
     head.onclick=()=>{openEx=(openEx===ex?null:ex);renderList();};card.appendChild(head);
     const lg=document.createElement('div');lg.className='logger';if(openEx===ex)lg.appendChild(buildLogger(ex,todays,last,lastDate));card.appendChild(lg);list.appendChild(card);});
   const ab=document.createElement('button');ab.className='add-ex';ab.textContent='+ Add exercise';
-  ab.onclick=()=>{const n=prompt('Exercise name');if(n&&n.trim()){openEx=n.trim();renderList();}};list.appendChild(ab);}
+  ab.onclick=()=>{const n=prompt('Exercise name');if(n&&n.trim()){const name=n.trim();addCustomExercise(currentDay,name);openEx=name;renderList();}};list.appendChild(ab);}
 function buildLogger(ex,todays,last,lastDate){const wrap=document.createElement('div');
   const sW=lastWeight[ex]??(todays.length?todays[todays.length-1].weight:(last.length?last[0].weight:45));
-  const sR=last.length?last[0].reps:10;
+  const sR=lastReps[ex]??(todays.length?todays[todays.length-1].reps:(last.length?last[0].reps:10));
   wrap.innerHTML=`<div class="steppers">
-    <div class="stp"><label>Weight (lb)</label><div class="stp-row"><button data-act="w-">–</button><input id="w_${cid(ex)}" inputmode="numeric" value="${sW}"><button data-act="w+">+</button></div></div>
-    <div class="stp"><label>Reps</label><div class="stp-row"><button data-act="r-">–</button><input id="r_${cid(ex)}" inputmode="numeric" value="${sR}"><button data-act="r+">+</button></div></div></div>
-    <button class="add" id="add_${cid(ex)}">Add set ${todays.length+1}</button>`;
+    <div class="stp"><label>Weight (lb)</label><div class="stp-row"><button type="button" data-act="w-">–</button><input id="w_${cid(ex)}" type="number" inputmode="decimal" min="0" step="2.5" value="${sW}"><button type="button" data-act="w+">+</button></div></div>
+    <div class="stp"><label>Reps</label><div class="stp-row"><button type="button" data-act="r-">–</button><input id="r_${cid(ex)}" type="number" inputmode="numeric" min="0" step="1" value="${sR}"><button type="button" data-act="r+">+</button></div></div></div>
+    <button class="add" id="add_${cid(ex)}" type="button">Add set ${todays.length+1}</button>`;
   const wIn=wrap.querySelector(`#w_${cid(ex)}`),rIn=wrap.querySelector(`#r_${cid(ex)}`);
   wrap.querySelectorAll('button[data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act;
     if(a==='w+')wIn.value=num(wIn.value)+5;if(a==='w-')wIn.value=Math.max(0,num(wIn.value)-5);
     if(a==='r+')rIn.value=num(rIn.value)+1;if(a==='r-')rIn.value=Math.max(0,num(rIn.value)-1);});
-  wrap.querySelector(`#add_${cid(ex)}`).onclick=async e=>{const btn=e.target,w=num(wIn.value),r=num(rIn.value);
-    if(r<=0){toast('Reps must be > 0',true);return;}lastWeight[ex]=w;btn.disabled=true;btn.textContent='Saving…';
+  wrap.querySelector(`#add_${cid(ex)}`).onclick=async e=>{const btn=e.currentTarget,w=num(wIn.value),r=num(rIn.value);
+    if(r<=0){toast('Reps must be > 0',true);return;}lastWeight[ex]=w;lastReps[ex]=r;btn.disabled=true;btn.textContent='Saving…';
     try{const saved=await api.insert({log_date:localDate(),day:currentDay,exercise:ex,weight:w,reps:r,set_number:todays.length+1});
       rows.unshift(saved);toast('Set logged');if(navigator.vibrate)navigator.vibrate(15);renderList();}
     catch(err){toast('Save failed: '+err.message,true);btn.disabled=false;btn.textContent='Add set '+(todays.length+1);}};
@@ -575,7 +579,7 @@ function renderStats(all,bw){
   const tot=str+hyp+end||1;
 
   /* PR wall */
-  const mainLifts=['Barbell Squats','Barbell Flat Bench','DB Shoulder Press','Lat Pulldown','Rows'].filter(e=>bestByEx[e]);
+  const mainLifts=['Barbell Squats','Barbell Flat Bench','Barbell Shoulder Press','Lat Pulldown','Rows'].filter(e=>bestByEx[e]);
   const heaviest={};all.forEach(r=>{if(!heaviest[r.exercise]||r.weight>heaviest[r.exercise])heaviest[r.exercise]=r.weight;});
 
   /* plateau flags */
