@@ -81,6 +81,7 @@
   .logger{border-top:1px solid var(--line); padding:16px; display:none;}
   .ex.open .logger{display:block;}
   .steppers{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;}
+  .stp{min-width:0;}
   .stp label{display:block; font-family:'Oswald'; text-transform:uppercase; font-size:11px; letter-spacing:.12em; color:var(--dim); margin-bottom:7px; text-align:center;}
   .stp-row{display:flex; align-items:center; background:var(--panel2); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
   .stp-row button{width:46px; height:54px; font-size:24px; font-weight:500; color:var(--volt); flex-shrink:0;}
@@ -457,9 +458,10 @@ function buildLogger(ex,todays,last,lastDate){const wrap=document.createElement(
   const sW=lastWeight[ex]??(todays.length?todays[todays.length-1].weight:(last.length?last[0].weight:45));
   const sR=lastReps[ex]??(todays.length?todays[todays.length-1].reps:(last.length?last[0].reps:10));
   wrap.innerHTML=`<div class="steppers">
-    <div class="stp"><label>Weight (lb)</label><div class="stp-row"><button type="button" data-act="w-">–</button><input id="w_${cid(ex)}" type="text" inputmode="decimal" autocomplete="off" pattern="[0-9]*\\.?[0-9]*" value="${sW}"><button type="button" data-act="w+">+</button></div></div>
-    <div class="stp"><label>Reps</label><div class="stp-row"><button type="button" data-act="r-">–</button><input id="r_${cid(ex)}" type="text" inputmode="numeric" autocomplete="off" pattern="[0-9]*" value="${sR}"><button type="button" data-act="r+">+</button></div></div></div>
-    <button class="add" id="add_${cid(ex)}" type="button">Add set ${todays.length+1}</button>`;
+    <div class="stp"><label>Weight (lb)</label><div class="stp-row"><button type="button" data-act="w-">–</button><input id="w_${cid(ex)}" type="text" inputmode="decimal" autocomplete="off" value="${sW}"><button type="button" data-act="w+">+</button></div></div>
+    <div class="stp"><label>Reps</label><div class="stp-row"><button type="button" data-act="r-">–</button><input id="r_${cid(ex)}" type="text" inputmode="numeric" autocomplete="off" value="${sR}"><button type="button" data-act="r+">+</button></div></div>
+  </div>
+  <button class="add" id="add_${cid(ex)}" type="button">Add set ${todays.length+1}</button>`;
   const wIn=wrap.querySelector(`#w_${cid(ex)}`),rIn=wrap.querySelector(`#r_${cid(ex)}`);
   const commit=el=>{el.blur();};
   wrap.querySelectorAll('button[data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act;
