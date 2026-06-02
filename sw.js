@@ -1,5 +1,5 @@
 /* RACKED service worker — offline app shell + opportunistic Supabase cache */
-const VERSION = 'racked-v5';
+const VERSION = 'racked-v6';
 const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const SUPABASE_CACHE = `${VERSION}-supabase`;
@@ -31,10 +31,15 @@ self.addEventListener('activate', (event) => {
 
 const isSupabase = (url) => /\.supabase\.co\/rest\/v1\//.test(url);
 const isFontAsset = (url) => /fonts\.(googleapis|gstatic)\.com/.test(url);
-const isShellAsset = (url) => {
+const isHtmlShell = (url) => {
   const u = new URL(url);
   if (u.origin !== self.location.origin) return false;
-  return /\.(html|js|css|png|svg|webmanifest|json)$/.test(u.pathname) || u.pathname.endsWith('/');
+  return /\.html$/.test(u.pathname) || u.pathname === '/' || u.pathname === '/callback';
+};
+const isStaticAsset = (url) => {
+  const u = new URL(url);
+  if (u.origin !== self.location.origin) return false;
+  return /\.(png|svg|webmanifest|json|ico)$/.test(u.pathname);
 };
 
 async function networkFirst(request, cacheName) {
@@ -84,8 +89,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(staleWhileRevalidate(request, RUNTIME_CACHE));
     return;
   }
-  if (isShellAsset(url)) {
-    event.respondWith(cacheFirst(request, SHELL_CACHE).catch(() => caches.match('./index.html')));
+  if (isHtmlShell(url)) {
+    event.respondWith(networkFirst(request, SHELL_CACHE).catch(() => caches.match('./index.html')));
+    return;
+  }
+  if (isStaticAsset(url)) {
+    event.respondWith(cacheFirst(request, SHELL_CACHE));
     return;
   }
 });

@@ -457,14 +457,15 @@ function buildLogger(ex,todays,last,lastDate){const wrap=document.createElement(
   const sW=lastWeight[ex]??(todays.length?todays[todays.length-1].weight:(last.length?last[0].weight:45));
   const sR=lastReps[ex]??(todays.length?todays[todays.length-1].reps:(last.length?last[0].reps:10));
   wrap.innerHTML=`<div class="steppers">
-    <div class="stp"><label>Weight (lb)</label><div class="stp-row"><button type="button" data-act="w-">–</button><input id="w_${cid(ex)}" type="number" inputmode="decimal" min="0" step="2.5" value="${sW}"><button type="button" data-act="w+">+</button></div></div>
-    <div class="stp"><label>Reps</label><div class="stp-row"><button type="button" data-act="r-">–</button><input id="r_${cid(ex)}" type="number" inputmode="numeric" min="0" step="1" value="${sR}"><button type="button" data-act="r+">+</button></div></div></div>
+    <div class="stp"><label>Weight (lb)</label><div class="stp-row"><button type="button" data-act="w-">–</button><input id="w_${cid(ex)}" type="text" inputmode="decimal" autocomplete="off" pattern="[0-9]*\\.?[0-9]*" value="${sW}"><button type="button" data-act="w+">+</button></div></div>
+    <div class="stp"><label>Reps</label><div class="stp-row"><button type="button" data-act="r-">–</button><input id="r_${cid(ex)}" type="text" inputmode="numeric" autocomplete="off" pattern="[0-9]*" value="${sR}"><button type="button" data-act="r+">+</button></div></div></div>
     <button class="add" id="add_${cid(ex)}" type="button">Add set ${todays.length+1}</button>`;
   const wIn=wrap.querySelector(`#w_${cid(ex)}`),rIn=wrap.querySelector(`#r_${cid(ex)}`);
+  const commit=el=>{el.blur();};
   wrap.querySelectorAll('button[data-act]').forEach(b=>b.onclick=()=>{const a=b.dataset.act;
-    if(a==='w+')wIn.value=num(wIn.value)+5;if(a==='w-')wIn.value=Math.max(0,num(wIn.value)-5);
-    if(a==='r+')rIn.value=num(rIn.value)+1;if(a==='r-')rIn.value=Math.max(0,num(rIn.value)-1);});
-  wrap.querySelector(`#add_${cid(ex)}`).onclick=async e=>{const btn=e.currentTarget,w=num(wIn.value),r=num(rIn.value);
+    if(a==='w+'){commit(wIn);wIn.value=num(wIn.value)+5;}if(a==='w-'){commit(wIn);wIn.value=Math.max(0,num(wIn.value)-5);}
+    if(a==='r+'){commit(rIn);rIn.value=num(rIn.value)+1;}if(a==='r-'){commit(rIn);rIn.value=Math.max(0,num(rIn.value)-1);}});
+  wrap.querySelector(`#add_${cid(ex)}`).onclick=async e=>{const btn=e.currentTarget;rIn.blur();wIn.blur();const w=num(wIn.value),r=num(rIn.value);
     if(r<=0){toast('Reps must be > 0',true);return;}lastWeight[ex]=w;lastReps[ex]=r;btn.disabled=true;btn.textContent='Saving…';
     try{const saved=await api.insert({log_date:localDate(),day:currentDay,exercise:ex,weight:w,reps:r,set_number:todays.length+1});
       rows.unshift(saved);toast('Set logged');if(navigator.vibrate)navigator.vibrate(15);renderList();}
