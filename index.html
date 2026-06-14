@@ -61,9 +61,34 @@
   .demo-bar{font-family:'JetBrains Mono'; font-size:10.5px; letter-spacing:.06em; color:var(--faint); text-transform:uppercase; padding:0 2px 12px;}
   .demo-bar b{color:var(--volt-dim);}
 
-  .nav{display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:18px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:5px;}
+  .nav{display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:18px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:5px;}
   .nav button{padding:11px; border-radius:9px; font-weight:600; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim);}
   .nav button.active{background:var(--volt); color:#0a0a0b;}
+  /* calendar / history */
+  .cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .cal-head h2{font-family:'Oswald'; text-transform:uppercase; letter-spacing:.05em; font-size:17px; margin:0; color:var(--text);}
+  .cal-nav{width:38px; height:38px; border-radius:10px; background:var(--panel); border:1px solid var(--line); color:var(--text); font-size:20px; line-height:1; display:flex; align-items:center; justify-content:center;}
+  .cal-nav:disabled{opacity:.3;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
+  .cal-dow{text-align:center; font-family:'JetBrains Mono'; font-size:10px; letter-spacing:.05em; color:var(--faint); padding-bottom:3px;}
+  .cal-cell{aspect-ratio:1; border:1px solid var(--line); border-radius:10px; background:var(--panel); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;}
+  .cal-cell.empty{border:none; background:none;}
+  .cal-cell .dnum{font-family:'JetBrains Mono'; font-size:13px; color:var(--dim);}
+  .cal-cell.today{border-color:var(--dim);}
+  .cal-cell.today .dnum{color:var(--text); font-weight:700;}
+  .cal-cell.worked{background:rgba(201,247,58,.10); border-color:var(--volt-dim); cursor:pointer;}
+  .cal-cell.worked .dnum{color:var(--volt); font-weight:700;}
+  .cal-cell .dtag{font-family:'Oswald'; font-size:7.5px; text-transform:uppercase; letter-spacing:.02em; color:var(--volt-dim); line-height:1;}
+  .cal-cell.sel{outline:2px solid var(--volt); outline-offset:-1px;}
+  .cal-detail{margin-top:16px;}
+  .cd-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;}
+  .cd-date{font-family:'Oswald'; text-transform:uppercase; letter-spacing:.04em; font-size:15px; color:var(--text);}
+  .cd-split{font-family:'JetBrains Mono'; font-size:11px; color:var(--volt-dim); text-align:right;}
+  .cd-meta{font-family:'JetBrains Mono'; font-size:11px; color:var(--faint); padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px;}
+  .cd-ex{display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:8px 0; border-bottom:1px solid var(--line);}
+  .cd-ex:last-child{border-bottom:none; padding-bottom:0;}
+  .cd-ex-name{font-size:14px; color:var(--text);}
+  .cd-ex-sets{font-family:'JetBrains Mono'; font-size:12px; color:var(--dim); text-align:right; white-space:nowrap;}
 
   /* LOG */
   .tabs{display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; margin-bottom:18px;}
@@ -232,12 +257,14 @@
   <div class="demo-bar hidden" id="demoBar">▸ <b>Demo mode</b> — sample data, nothing saves. Reload to reset.</div>
   <div class="nav">
     <button id="navLog" class="active">Log</button>
+    <button id="navHistory">History</button>
     <button id="navStats">Stats</button>
   </div>
   <div id="viewLog">
     <div class="tabs" id="tabs"></div>
     <div id="exerciseList"></div>
   </div>
+  <div id="viewHistory" class="hidden"></div>
   <div id="viewStats" class="hidden"></div>
 </section>
 
@@ -308,6 +335,7 @@ let toastTimer; function toast(m,err){const t=$('#toast');t.textContent=m;t.clas
 function hdrs(x={}){return Object.assign({apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},x);}
 async function sbGet(day){const u=`${URL_}/rest/v1/sets?day=eq.${encodeURIComponent(day)}&order=log_date.desc,set_number.asc&limit=4000`;const r=await fetch(u,{headers:hdrs()});if(!r.ok)throw new Error(await r.text());return r.json();}
 async function sbAll(){const r=await fetch(`${URL_}/rest/v1/sets?order=log_date.asc&limit=10000`,{headers:hdrs()});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbMonth(first,next){const u=`${URL_}/rest/v1/sets?log_date=gte.${first}&log_date=lt.${next}&order=log_date.asc,set_number.asc&limit=5000`;const r=await fetch(u,{headers:hdrs()});if(!r.ok)throw new Error(await r.text());return r.json();}
 async function sbInsert(row){const r=await fetch(`${URL_}/rest/v1/sets`,{method:'POST',headers:hdrs({Prefer:'return=representation'}),body:JSON.stringify(row)});if(!r.ok)throw new Error(await r.text());return (await r.json())[0];}
 async function sbDelete(id){const r=await fetch(`${URL_}/rest/v1/sets?id=eq.${id}`,{method:'DELETE',headers:hdrs()});if(!r.ok)throw new Error(await r.text());}
 async function sbBW(){try{const r=await fetch(`${URL_}/rest/v1/bodyweight?order=log_date.asc&limit=3000`,{headers:hdrs()});if(!r.ok)return[];return r.json();}catch(e){return[];}}
@@ -380,6 +408,8 @@ async function whoopLoadReadiness(){
 const api={
   async getDay(d){return DEMO? DB.filter(r=>r.day===d): sbGet(d);},
   async getAll(){return DEMO? DB.slice(): sbAll();},
+  async getMonth(y,m){const first=`${y}-${String(m+1).padStart(2,'0')}-01`;const ny=m===11?y+1:y,nm=m===11?0:m+1;const next=`${ny}-${String(nm+1).padStart(2,'0')}-01`;
+    return DEMO? DB.filter(r=>r.log_date>=first&&r.log_date<next).slice(): sbMonth(first,next);},
   async insert(row){if(DEMO){const r={...row,id:_id++};DB.unshift(r);return r;}return sbInsert(row);},
   async del(id){if(DEMO){DB=DB.filter(x=>x.id!==id);return;}return sbDelete(id);},
   async getBW(){return DEMO? BW.slice(): sbBW();},
@@ -419,13 +449,14 @@ $('#gearBtn').addEventListener('click',async()=>{
 
 /* ===== view nav ===== */
 $('#navLog').onclick=()=>switchView('log');
+$('#navHistory').onclick=()=>switchView('history');
 $('#navStats').onclick=()=>switchView('stats');
 function switchView(v){
-  $('#navLog').classList.toggle('active',v==='log');
-  $('#navStats').classList.toggle('active',v==='stats');
-  $('#viewLog').classList.toggle('hidden',v!=='log');
-  $('#viewStats').classList.toggle('hidden',v!=='stats');
+  ['Log','History','Stats'].forEach(n=>{const k=n.toLowerCase();
+    $('#nav'+n).classList.toggle('active',v===k);
+    $('#view'+n).classList.toggle('hidden',v!==k);});
   if(v==='stats')loadStats();
+  if(v==='history')loadHistory();
 }
 
 /* ===== LOG ===== */
@@ -702,6 +733,64 @@ function muscleBars(items,target){const mx=Math.max(target[1],...items.map(i=>i.
     const col=i.value<target[0]?'#ff5a3c':(i.value>target[1]?'#ffd23c':'#c9f73a');
     return `<div class="mbar"><div class="mbar-top"><span>${i.label}</span><span class="mono">${i.value}</span></div>
       <div class="mtrack"><div class="mband" style="left:${lo}%;width:${hi-lo}%"></div><div class="mfill" style="width:${pct}%;background:${col}"></div></div></div>`;}).join('');}
+
+/* ===== HISTORY (calendar) ===== */
+let histY=null, histM=null, histRows=[], histSel=null;
+async function loadHistory(){
+  if(histY===null){const n=new Date();histY=n.getFullYear();histM=n.getMonth();}
+  await renderHistory();
+}
+async function renderHistory(){
+  const v=$('#viewHistory');v.innerHTML='<div class="loading">loading…</div>';
+  let rows;try{rows=await api.getMonth(histY,histM);}catch(e){v.innerHTML='<div class="loading">Couldn\'t load history.</div>';toast('History failed: '+e.message,true);return;}
+  histRows=rows;
+  const byDate={};rows.forEach(r=>{(byDate[r.log_date]=byDate[r.log_date]||[]).push(r);});
+  const now=new Date(),curY=now.getFullYear(),curM=now.getMonth(),todayKey=localDate(now);
+  const atCurrent=(histY===curY&&histM===curM);
+  const title=new Date(histY,histM,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const startDow=new Date(histY,histM,1).getDay();
+  const daysInMonth=new Date(histY,histM+1,0).getDate();
+  let cells='';
+  for(let i=0;i<startDow;i++)cells+='<div class="cal-cell empty"></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const key=`${histY}-${String(histM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dr=byDate[key];const cls=['cal-cell'];let tag='';
+    if(key===todayKey)cls.push('today');
+    if(dr&&dr.length){cls.push('worked');if(key===histSel)cls.push('sel');tag=`<span class="dtag">${dr[0].day.split(' / ')[0]}</span>`;}
+    cells+=`<div class="${cls.join(' ')}" data-date="${dr?key:''}"><span class="dnum">${d}</span>${tag}</div>`;
+  }
+  const dow=['S','M','T','W','T','F','S'].map(x=>`<div class="cal-dow">${x}</div>`).join('');
+  v.innerHTML=`<div class="cal-head">
+      <button class="cal-nav" id="calPrev">‹</button>
+      <h2>${title}</h2>
+      <button class="cal-nav" id="calNext"${atCurrent?' disabled':''}>›</button>
+    </div>
+    <div class="cal-grid">${dow}${cells}</div>
+    <div class="cal-detail" id="calDetail"></div>`;
+  $('#calPrev').onclick=()=>{histSel=null;if(histM===0){histM=11;histY--;}else histM--;renderHistory();};
+  $('#calNext').onclick=()=>{if(atCurrent)return;histSel=null;if(histM===11){histM=0;histY++;}else histM++;renderHistory();};
+  v.querySelectorAll('.cal-cell.worked').forEach(c=>c.onclick=()=>{histSel=(histSel===c.dataset.date?null:c.dataset.date);
+    v.querySelectorAll('.cal-cell').forEach(x=>x.classList.toggle('sel',!!x.dataset.date&&x.dataset.date===histSel));renderDayDetail();});
+  if(histSel)renderDayDetail();
+}
+function renderDayDetail(){
+  const box=$('#calDetail');if(!box)return;
+  if(!histSel){box.innerHTML='';return;}
+  const dr=histRows.filter(r=>r.log_date===histSel);
+  if(!dr.length){box.innerHTML='';return;}
+  const splits=[...new Set(dr.map(r=>r.day))].join(' · ');
+  const totalVol=Math.round(dr.reduce((a,r)=>a+vol(r),0));
+  const order=[],byEx={};
+  dr.forEach(r=>{if(!byEx[r.exercise]){byEx[r.exercise]=[];order.push(r.exercise);}byEx[r.exercise].push(r);});
+  const exHtml=order.map(ex=>{const sets=byEx[ex].slice().sort((a,b)=>a.set_number-b.set_number);
+    return `<div class="cd-ex"><div class="cd-ex-name">${ex}</div><div class="cd-ex-sets">${fmtSets(sets)}</div></div>`;}).join('');
+  const[yy,mm,dd]=histSel.split('-');
+  const dlong=new Date(yy,mm-1,dd).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  box.innerHTML=`<div class="panel-box">
+    <div class="cd-head"><span class="cd-date">${dlong}</span><span class="cd-split">${splits}</span></div>
+    <div class="cd-meta">${order.length} exercises · ${dr.length} sets · ${totalVol.toLocaleString()} lb volume</div>
+    ${exHtml}</div>`;
+}
 
 /* ===== demo data ===== */
 function buildDemo(){DB=[];_id=1;BW=[];const days=Object.keys(PROGRAM);
