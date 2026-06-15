@@ -75,8 +75,8 @@
   .cal-cell{position:relative; height:56px; min-width:0; border:1px solid var(--line); border-radius:10px; background:var(--panel); display:flex; align-items:center; justify-content:center;}
   .cal-cell.empty{border:none; background:none;}
   .cal-cell .dnum{font-family:'JetBrains Mono'; font-size:13px; color:var(--dim); line-height:1;}
-  .cal-cell.today{border-color:var(--dim);}
-  .cal-cell.today .dnum{color:var(--text); font-weight:700;}
+  .cal-cell.cal-today{border-color:var(--dim);}
+  .cal-cell.cal-today .dnum{color:var(--text); font-weight:700;}
   .cal-cell.worked{background:rgba(201,247,58,.10); border-color:var(--volt-dim); cursor:pointer;}
   .cal-cell.worked .dnum{color:var(--volt); font-weight:700;}
   .cal-cell .dtag{position:absolute; left:0; right:0; bottom:6px; text-align:center; font-family:'Oswald'; font-size:8px; text-transform:uppercase; letter-spacing:.02em; color:var(--volt-dim); line-height:1;}
@@ -763,7 +763,7 @@ async function renderHistory(){
   for(let d=1;d<=daysInMonth;d++){
     const key=`${histY}-${String(histM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dr=byDate[key];const cls=['cal-cell'];let tag='';
-    if(key===todayKey)cls.push('today');
+    if(key===todayKey)cls.push('cal-today');
     if(dr&&dr.length){cls.push('worked');if(key===histSel)cls.push('sel');tag=`<span class="dtag">${dr[0].day.split(' / ')[0]}</span>`;}
     cells+=`<div class="${cls.join(' ')}" data-date="${dr?key:''}"><span class="dnum">${d}</span>${tag}</div>`;
   }
