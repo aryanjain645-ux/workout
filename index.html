@@ -69,26 +69,29 @@
   .cal-head h2{font-family:'Oswald'; text-transform:uppercase; letter-spacing:.05em; font-size:17px; margin:0; color:var(--text);}
   .cal-nav{width:38px; height:38px; border-radius:10px; background:var(--panel); border:1px solid var(--line); color:var(--text); font-size:20px; line-height:1; display:flex; align-items:center; justify-content:center;}
   .cal-nav:disabled{opacity:.3;}
+  .cal-dow-row{display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin-bottom:6px;}
   .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:5px;}
-  .cal-dow{text-align:center; font-family:'JetBrains Mono'; font-size:10px; letter-spacing:.05em; color:var(--faint); padding-bottom:3px;}
-  .cal-cell{aspect-ratio:1; border:1px solid var(--line); border-radius:10px; background:var(--panel); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;}
+  .cal-dow{text-align:center; font-family:'JetBrains Mono'; font-size:10px; letter-spacing:.05em; color:var(--faint);}
+  .cal-cell{height:56px; min-width:0; border:1px solid var(--line); border-radius:10px; background:var(--panel); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;}
   .cal-cell.empty{border:none; background:none;}
   .cal-cell .dnum{font-family:'JetBrains Mono'; font-size:13px; color:var(--dim);}
   .cal-cell.today{border-color:var(--dim);}
   .cal-cell.today .dnum{color:var(--text); font-weight:700;}
   .cal-cell.worked{background:rgba(201,247,58,.10); border-color:var(--volt-dim); cursor:pointer;}
   .cal-cell.worked .dnum{color:var(--volt); font-weight:700;}
-  .cal-cell .dtag{font-family:'Oswald'; font-size:7.5px; text-transform:uppercase; letter-spacing:.02em; color:var(--volt-dim); line-height:1;}
+  .cal-cell .dtag{font-family:'Oswald'; font-size:8px; text-transform:uppercase; letter-spacing:.02em; color:var(--volt-dim); line-height:1;}
   .cal-cell.sel{outline:2px solid var(--volt); outline-offset:-1px;}
-  .cal-detail{margin-top:16px;}
-  .cd-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px;}
+  .cal-detail{margin-top:18px;}
+  .cd-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:5px;}
   .cd-date{font-family:'Oswald'; text-transform:uppercase; letter-spacing:.04em; font-size:15px; color:var(--text);}
   .cd-split{font-family:'JetBrains Mono'; font-size:11px; color:var(--volt-dim); text-align:right;}
-  .cd-meta{font-family:'JetBrains Mono'; font-size:11px; color:var(--faint); padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px;}
-  .cd-ex{display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:8px 0; border-bottom:1px solid var(--line);}
+  .cd-meta{font-family:'JetBrains Mono'; font-size:11px; color:var(--faint); padding-bottom:11px; border-bottom:1px solid var(--line); margin-bottom:6px;}
+  .cd-ex{padding:11px 0; border-bottom:1px solid var(--line);}
   .cd-ex:last-child{border-bottom:none; padding-bottom:0;}
-  .cd-ex-name{font-size:14px; color:var(--text);}
-  .cd-ex-sets{font-family:'JetBrains Mono'; font-size:12px; color:var(--dim); text-align:right; white-space:nowrap;}
+  .cd-ex-name{font-family:'Oswald'; font-weight:500; text-transform:uppercase; font-size:14px; letter-spacing:.03em; color:var(--text); margin-bottom:8px;}
+  .cd-sets{display:flex; flex-wrap:wrap; gap:6px;}
+  .cd-chip{font-family:'JetBrains Mono'; font-size:12px; color:var(--dim); background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:5px 9px; white-space:nowrap;}
+  .cd-chip b{color:var(--volt); font-weight:700;} .cd-chip .u{color:var(--faint); font-size:10px; margin-left:1px;}
 
   /* LOG */
   .tabs{display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; margin-bottom:18px;}
@@ -765,7 +768,8 @@ async function renderHistory(){
       <h2>${title}</h2>
       <button class="cal-nav" id="calNext"${atCurrent?' disabled':''}>›</button>
     </div>
-    <div class="cal-grid">${dow}${cells}</div>
+    <div class="cal-dow-row">${dow}</div>
+    <div class="cal-grid">${cells}</div>
     <div class="cal-detail" id="calDetail"></div>`;
   $('#calPrev').onclick=()=>{histSel=null;if(histM===0){histM=11;histY--;}else histM--;renderHistory();};
   $('#calNext').onclick=()=>{if(atCurrent)return;histSel=null;if(histM===11){histM=0;histY++;}else histM++;renderHistory();};
@@ -782,8 +786,9 @@ function renderDayDetail(){
   const totalVol=Math.round(dr.reduce((a,r)=>a+vol(r),0));
   const order=[],byEx={};
   dr.forEach(r=>{if(!byEx[r.exercise]){byEx[r.exercise]=[];order.push(r.exercise);}byEx[r.exercise].push(r);});
+  const chip=s=>`<span class="cd-chip"><b>${s.weight>0?s.weight:'BW'}</b>×${s.reps}</span>`;
   const exHtml=order.map(ex=>{const sets=byEx[ex].slice().sort((a,b)=>a.set_number-b.set_number);
-    return `<div class="cd-ex"><div class="cd-ex-name">${ex}</div><div class="cd-ex-sets">${fmtSets(sets)}</div></div>`;}).join('');
+    return `<div class="cd-ex"><div class="cd-ex-name">${ex}</div><div class="cd-sets">${sets.map(chip).join('')}</div></div>`;}).join('');
   const[yy,mm,dd]=histSel.split('-');
   const dlong=new Date(yy,mm-1,dd).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
   box.innerHTML=`<div class="panel-box">
